@@ -43,6 +43,7 @@ public class UIManager : MonoBehaviour
 
     public GameObject downColor;
     public GameObject upColor;
+    public GameObject pressF;
 
 
     private void Update()

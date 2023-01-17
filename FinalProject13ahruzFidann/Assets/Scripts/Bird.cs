@@ -44,6 +44,7 @@ public class Bird : MonoBehaviour
     {
         if (transform.position == portal1.position)
         {
+            SoundManager.instance.Play("Portal");
             transform.position = portal2.position;
         }
 

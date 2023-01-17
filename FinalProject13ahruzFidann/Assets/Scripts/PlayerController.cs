@@ -83,14 +83,15 @@ public class PlayerController : MonoBehaviour
     Transform portal2;
     [SerializeField]
     private ParticleSystem canonShootParticle;
-    bool runSound = false;
-    bool walkSound = false;
     [SerializeField]
     private List<ParticleSystem> sarmasiqPart;
     [SerializeField]
     private Transform sarmasiq;
     [SerializeField]
     private Transform finalBuzzz;
+    [SerializeField]
+    Transform sarmasiqPos;
+
 
 
 
@@ -109,7 +110,16 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (torchOnHand && Input.GetMouseButtonDown(0))
+        {
+            anim.SetTrigger("Throw");
+            StartCoroutine(takeTorch());
+        }
 
+        if (Input.GetKeyDown(KeyCode.Backspace))
+        {
+            CameraManager.instance.OpenCamera("Game", 1f, CameraEaseStates.EaseInOut);
+        }
 
         UIManager.instance.healtBar.GetComponent<Image>().fillAmount = health * 0.01f;
 
@@ -167,6 +177,7 @@ public class PlayerController : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Q))
         {
+            DOTween.To(() => UIManager.instance.timeBar.GetComponent<Image>().fillAmount, x => UIManager.instance.timeBar.GetComponent<Image>().fillAmount = x, 0, 3f);
             SoundManager.instance.Play("Time");
             anim.SetTrigger("Time");
             magicSphere = Instantiate(bullet, magicPos.position, Quaternion.identity);
@@ -259,8 +270,23 @@ public class PlayerController : MonoBehaviour
             }
 
         }
+    }
 
-
+    public void throwTorch()
+    {
+        if (torch != null)
+        {
+            torch.DOJump(sarmasiqPos.position, 0.005f, 1, 0.4f).OnComplete(() =>
+            {
+                torch.SetParent(sarmasiqPos);
+                foreach (ParticleSystem part in sarmasiqPart)
+                {
+                    part.Play();
+                }
+                sarmasiq.DOScale(0, 3f);
+            });
+            anim.SetBool("Torch", false);
+        }
     }
 
     private void Jump()
@@ -346,6 +372,8 @@ public class PlayerController : MonoBehaviour
         if (other.transform.CompareTag("CanonBullet"))
         {
             health -= 10;
+            anim.SetTrigger("Fall");
+            SoundManager.instance.Play("Damage");
         }
 
         if (other.transform.CompareTag("Water"))
@@ -374,6 +402,7 @@ public class PlayerController : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.F))
             {
+                UIManager.instance.pressF.SetActive(false);
                 StartCoroutine(canonCamWaiter());
                 other.transform.GetChild(0).DOLocalRotate(new Vector3(12f, -372f, -13f), 0.3f);
                 Canon.instance.seq.Kill();
@@ -387,6 +416,7 @@ public class PlayerController : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.F) && !isPicked)
             {
+                UIManager.instance.pressF.SetActive(false);
                 StartCoroutine(riverStoneWaiter());
                 anim.SetTrigger("Push");
                 anim.SetBool("Pushing", true);
@@ -400,6 +430,8 @@ public class PlayerController : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.F))
             {
+                torch = other.transform;
+                UIManager.instance.pressF.SetActive(false);
                 other.transform.SetParent(torchPos);
                 other.transform.localRotation = Quaternion.Euler(0, 0, 0);
                 other.transform.localPosition = new Vector3(0, 0, 0);
@@ -414,17 +446,7 @@ public class PlayerController : MonoBehaviour
         }
 
 
-        if (other.CompareTag("Sarmasiq"))
-        {
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                foreach (ParticleSystem part in sarmasiqPart)
-                {
-                    part.Play();
-                }
-                sarmasiq.DOScale(0, 3f);
-            }
-        }
+
 
     }
 
@@ -438,16 +460,62 @@ public class PlayerController : MonoBehaviour
 
         if (other.CompareTag("PortalBir"))
         {
+            SoundManager.instance.Play("Portal");
             transform.position = portal2.position;
         }
 
         if (other.CompareTag("PortalFinish"))
         {
+            UIManager.instance.pressF.SetActive(false);
+            SoundManager.instance.Play("Portal");
             UIManager.instance.OpenWinPanel();
             UIManager.instance.CloseGeneralPanel();
         }
+
+        if (other.CompareTag("Lever"))
+        {
+            UIManager.instance.pressF.SetActive(true);
+        }
+        if (other.CompareTag("Stone"))
+        {
+            UIManager.instance.pressF.SetActive(true);
+        }
+        if (other.CompareTag("Torch"))
+        {
+            UIManager.instance.pressF.SetActive(true);
+        }
+        if (other.CompareTag("Portal"))
+        {
+            UIManager.instance.pressF.SetActive(true);
+        }
+
+        if (other.CompareTag("Magara"))
+        {
+            CameraManager.instance.OpenCamera("Cave", 1f, CameraEaseStates.EaseInOut);
+        }
     }
 
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Lever"))
+        {
+            UIManager.instance.pressF.SetActive(false);
+        }
+        if (other.CompareTag("Stone"))
+        {
+            UIManager.instance.pressF.SetActive(false);
+        }
+        if (other.CompareTag("Torch"))
+        {
+            UIManager.instance.pressF.SetActive(false);
+        }
+        if (other.CompareTag("Portal"))
+        {
+            UIManager.instance.pressF.SetActive(false);
+        }
+
+    }
 
 
 
